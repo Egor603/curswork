@@ -1,8 +1,8 @@
 import argparse
-from .views import index
+from src.views import index
 from pathlib import Path
 import pandas as pd
-from .reports import spend_by_category
+from src.reports import spend_by_category
 
 
 def main() -> None:
