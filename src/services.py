@@ -100,8 +100,6 @@ def get_rates(base: str = "USD") -> Dict[str, float]:
     """
     Возвращает словарь {'RUB': 94.1, 'EUR': 0.92, …} для указанной base-валюты.
     """
-    if not API_KEY:
-        raise CurrencyServiceError("API_KEY не задан в окружении")
 
     resp = requests.get(
         API_URL,

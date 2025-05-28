@@ -14,7 +14,7 @@ from .logger import logger
 DATA_COL_DATE = "Дата операции"
 DATA_COL_CARD = "Номер карты"
 DATA_COL_PAYMENT = "Сумма платежа"
-DATA_COL_CASHBACK = "Кешбэк"
+DATA_COL_CASHBACK = "Кэшбэк"
 DATA_COL_CATEGORY = "Категория"
 DATA_COL_DESCRIPTION = "Описание"
 
