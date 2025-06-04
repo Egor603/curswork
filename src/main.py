@@ -1,8 +1,9 @@
 import argparse
-from .views import index
+from src.views import index
 from pathlib import Path
 import pandas as pd
-from .reports import spend_by_category
+from src.reports import spend_by_category
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Coursework 1 demo CLI")
@@ -16,7 +17,8 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-def main() -> None:
+
+def main_2() -> None:
     filepath = Path(__file__).parent.parent / "data" / "transactions.xlsx"
     if filepath.exists():
         df = pd.read_excel(filepath)
@@ -25,5 +27,10 @@ def main() -> None:
         print("Нет файла с транзакциями, пропускаем отчёт.")
 
 
+def spend_by_category(df: pd.DataFrame, category: str) -> float:
+    # Your function implementation here
+    pass
+
+
 if __name__ == "__main__":
-    main()
+    main_2()
