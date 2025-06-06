@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List
 import requests
 from dotenv import load_dotenv
 
-from .logger import logger
+from src.logger import logger
 
 # ---------------- Общие ----------------
 
@@ -22,7 +22,12 @@ def _jsonify(obj: Any) -> str:
 
 # ---------------- Простой поиск ----------------
 
-
+def services_page() -> Dict:
+    """Страница сервисов"""
+    return {
+        'message': 'Сервисы банка',
+        'services': ['Переводы', 'Платежи', 'Шаблоны']
+    }
 def simple_search(query: str, transactions: List[Dict[str, Any]]) -> str:
     """Return transactions whose *query* substring appears in description or category."""
     q = query.lower()

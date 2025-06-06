@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 
 def main_2() -> None:
-    filepath = Path(__file__).parent.parent / "data" / "transactions.xlsx"
+    filepath = Path(__file__).parent.parent / "data" / "operations.xlsx"
     if filepath.exists():
         df = pd.read_excel(filepath)
         print(spend_by_category(df, category="Супермаркеты"))

@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -21,7 +21,7 @@ def _default_filename(func_name: str) -> Path:
 
 
 def save_report(
-    filename: str | None = None,
+        filename: str | None = None,
 ) -> Callable[[Callable[..., Dict[str, Any]]], Callable[..., Dict[str, Any]]]:
     def decorator(func: Callable[..., Dict[str, Any]]) -> Callable[..., Dict[str, Any]]:
         @wraps(func)
@@ -37,52 +37,77 @@ def save_report(
     return decorator
 
 
-# ------------------------------------------------------------
-# Reports implementations
-# ------------------------------------------------------------
-
-
 @save_report()
-def spend_by_category(df: pd.DataFrame, category: str, date_str: str | None = None) -> Dict[str, Any]:
-    end_date = datetime.strptime(date_str, "%Y-%m-%d") if date_str else datetime.now()
-    start_date = end_date - timedelta(days=90)
-
-    mask = (df["Дата операции"] >= start_date.strftime("%Y-%m-%d")) & (
-        df["Дата операции"] <= end_date.strftime("%Y-%m-%d")
-    )
-    mask &= df["Категория"] == category
-
-    total = float(df.loc[mask, "Сумма платежа"].sum())
-    result = {
-        "category": category,
-        "total_spent": round(total, 2),
-        "date_from": start_date.strftime("%Y-%m-%d"),
-        "date_to": end_date.strftime("%Y-%m-%d"),
-    }
-    logger.debug("Spend by category: %s", result)
-    return result
-
-
-def spend_by_category(transactions: List[Dict], base: str = "USD") -> Dict[str, float]:
-    summary: Dict[str, float] = {}
-    for tx in transactions:
-        amount_usd = convert(tx["amount"], tx["currency"], base)
-        summary[tx["category"]] = summary.get(tx["category"], 0) + amount_usd
-    return summary
-
-
 def spend_by_category(
-    df: pd.DataFrame,
-    category: str | None = None,
-    till: str | None = None,
+        data: Union[pd.DataFrame, List[Dict]],
+        category: Optional[str] = None,
+        date_str: Optional[str] = None,
+        base_currency: str = "USD"
 ) -> Dict[str, Any]:
+    """
+    Универсальная функция для анализа расходов по категориям.
 
-    if till:
-        till_dt = pd.to_datetime(till)
-        df = df[pd.to_datetime(df["Дата операции"]) <= till_dt]
+    Параметры:
+    - data: входные данные (DataFrame или список словарей)
+    - category: опциональная категория для фильтрации
+    - date_str: опциональная дата окончания периода (формат 'YYYY-MM-DD')
+    - base_currency: валюта для конвертации (по умолчанию 'USD')
 
-    if category:
-        df = df[df["Категория"] == category]
+    Возвращает:
+    - Словарь с результатами анализа
+    """
+    result: Dict[str, Any] = {}
 
-    total = df["Сумма платежа"].sum()
-    return {"total_spent": float(total)}
+    # Обработка DataFrame
+    if isinstance(data, pd.DataFrame):
+        df = data.copy()
+
+        # Преобразование дат
+        df['Дата операции'] = pd.to_datetime(df['Дата операции'])
+
+        # Фильтрация по дате
+        if date_str:
+            end_date = pd.to_datetime(date_str)
+            start_date = end_date - timedelta(days=90)
+            df = df[(df['Дата операции'] >= start_date) & (df['Дата операции'] <= end_date)]
+            result.update({
+                "date_from": start_date.strftime("%Y-%m-%d"),
+                "date_to": end_date.strftime("%Y-%m-%d")
+            })
+
+        # Фильтрация по категории
+        if category:
+            df = df[df['Категория'] == category]
+
+        # Суммирование
+        if category:
+            total = float(df['Сумма платежа'].sum())
+            result.update({
+                "category": category,
+                "total_spent": round(total, 2)
+            })
+        else:
+            summary = df.groupby('Категория')['Сумма платежа'].sum().to_dict()
+            result["by_category"] = {k: round(float(v), 2) for k, v in summary.items()}
+
+    # Обработка списка словарей
+    elif isinstance(data, list):
+        summary: Dict[str, float] = {}
+        for tx in data:
+            amount = convert(tx.get("amount", 0), tx.get("currency", "USD"), base_currency)
+            summary[tx.get("category", "Other")] = summary.get(tx.get("category", "Other"), 0) + amount
+
+        if category:
+            result = {
+                "category": category,
+                "total_spent": round(summary.get(category, 0), 2),
+                "currency": base_currency
+            }
+        else:
+            result = {
+                "by_category": {k: round(v, 2) for k, v in summary.items()},
+                "currency": base_currency
+            }
+
+    logger.debug("Spend by category result: %s", result)
+    return result
