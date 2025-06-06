@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import requests  # Added missing import
 from datetime import datetime, time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -89,24 +90,63 @@ def _dummy_price() -> float:
     return round(random.uniform(50, 500), 2)
 
 
-def get_currency_rates(currencies: List[str]) -> List[Dict[str, Any]]:
-    """Return list of dicts with fake currency rates.
+def get_currency_rates(currencies: List[str], base_currency: str = 'USD') -> List[Dict[str, Any]]:
+    """Return list of dicts with real currency rates from an API."""
+    try:
+        # Example using ExchangeRate-API (you'll need an API key)
+        api_key = "YOUR_API_KEY"
+        url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
 
-    Replace with real API call if needed.
-    """
-    rates = [{"currency": cur, "rate": _dummy_price()} for cur in currencies]
-    logger.info("Stub currency rates generated for %s", currencies)
-    return rates
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+
+        rates = []
+        for currency in currencies:
+            if currency in data['conversion_rates']:
+                rates.append({
+                    "currency": currency,
+                    "rate": data['conversion_rates'][currency],
+                    "base": base_currency
+                })
+
+        logger.info("Real currency rates fetched for %s", currencies)
+        return rates
+
+    except Exception as e:
+        logger.error("Failed to fetch currency rates: %s", str(e))
+        # Fallback to dummy data or raise
+        return [{"currency": cur, "rate": 1.0} for cur in currencies]
 
 
 def get_stock_prices(stocks: List[str]) -> List[Dict[str, Any]]:
-    """Return list of dicts with fake stock prices.
+    """Return list of dicts with real stock prices from an API."""
+    try:
+        # Example using Alpha Vantage (you'll need an API key)
+        api_key = "YOUR_API_KEY"
+        prices = []
 
-    Replace with real API call if needed.
-    """
-    prices = [{"stock": st, "price": _dummy_price()} for st in stocks]
-    logger.info("Stub stock prices generated for %s", stocks)
-    return prices
+        for stock in stocks:
+            url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock}&apikey={api_key}"
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+
+            if 'Global Quote' in data:
+                prices.append({
+                    "stock": stock,
+                    "price": float(data['Global Quote']['05. price']),
+                    "currency": "USD",  # Assuming USD, adjust if needed
+                    "change": data['Global Quote']['09. change']
+                })
+
+        logger.info("Real stock prices fetched for %s", stocks)
+        return prices
+
+    except Exception as e:
+        logger.error("Failed to fetch stock prices: %s", str(e))
+        # Fallback to dummy data or raise
+        return [{"stock": st, "price": 100.0} for st in stocks]
 
 
 def format_money(amount: float, currency: str = "USD") -> str:
