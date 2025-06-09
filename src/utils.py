@@ -11,6 +11,10 @@ from typing import Any, Dict, List
 import pandas as pd
 
 from .logger import logger
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DATA_COL_DATE = "Дата операции"
 DATA_COL_CARD = "Номер карты"
@@ -94,7 +98,7 @@ def get_currency_rates(currencies: List[str], base_currency: str = 'USD') -> Lis
     """Return list of dicts with real currency rates from an API."""
     try:
         # Example using ExchangeRate-API (you'll need an API key)
-        api_key = "YOUR_API_KEY"
+        api_key = os.getenv("API_KEY")
         url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
 
         response = requests.get(url)
@@ -123,7 +127,7 @@ def get_stock_prices(stocks: List[str]) -> List[Dict[str, Any]]:
     """Return list of dicts with real stock prices from an API."""
     try:
         # Example using Alpha Vantage (you'll need an API key)
-        api_key = "YOUR_API_KEY"
+        api_key = os.getenv("API_KEY_ALPHA")
         prices = []
 
         for stock in stocks:

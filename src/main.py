@@ -3,7 +3,6 @@ from pathlib import Path
 import pandas as pd
 from src.views import index
 from src.reports import spend_by_category
-from src.services import suggest_products  # Импорт функции для страницы Сервисы
 
 
 def main() -> None:

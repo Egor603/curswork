@@ -133,3 +133,56 @@ def convert(amount: float, from_curr: str, to_curr: str = "USD") -> float:
     if rate is None:
         raise CurrencyServiceError(f"Нет курса для {from_curr}")
     return amount / rate
+
+
+def suggest_products(transactions: List[Dict[str, Any]]) -> str:
+    """Анализирует транзакции пользователя и предлагает подходящие финансовые продукты."""
+    # Анализ транзакций
+    total_spent = sum(abs(float(t["Сумма операции"])) for t in transactions)
+    avg_monthly_spend = total_spent / 3  # предполагаем 3 месяца истории
+    categories = set(t.get("Категория", "") for t in transactions)
+
+    # Определение потенциальных продуктов
+    products = []
+
+    # Кредитная карта
+    if avg_monthly_spend > 30000:
+        products.append({
+            "name": "Кредитная карта с кэшбэком",
+            "description": "До 10% кэшбэка на основные категории",
+            "reason": "Ваши ежемесячные расходы позволяют максимизировать выгоду от кэшбэка"
+        })
+
+    # Инвестиционный счет
+    if "Переводы" in categories and avg_monthly_spend > 50000:
+        products.append({
+            "name": "Инвестиционный счёт",
+            "description": "Доходность до 8% годовых с возможностью частичного снятия",
+            "reason": "У вас есть свободные средства для инвестирования"
+        })
+
+    # Накопительный счет
+    if len(products) == 0 and avg_monthly_spend > 20000:
+        products.append({
+            "name": "Накопительный счёт",
+            "description": "3.5% годовых на остаток",
+            "reason": "Позволит сохранить и приумножить ваши сбережения"
+        })
+
+    # Дебетовая карта с кэшбэком (базовое предложение)
+    if len(products) == 0:
+        products.append({
+            "name": "Дебетовая карта с кэшбэком 1%",
+            "description": "1% кэшбэка на все покупки",
+            "reason": "Базовое предложение для всех клиентов"
+        })
+
+    logger.info("Suggested %d products based on transaction history", len(products))
+    return _jsonify({
+        "analysis": {
+            "avg_monthly_spend": round(avg_monthly_spend, 2),
+            "main_categories": list(categories)
+        },
+        "suggested_products": products
+    })
+
